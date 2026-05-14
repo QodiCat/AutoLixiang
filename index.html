@@ -1,60 +1,15 @@
-<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent 协作 Demo 工作台</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header class="topbar">
-    <h1>产品 x Agent 协作 Demo</h1>
-    <button id="runBtn" class="btn primary">生成方案</button>
-  </header>
-
-  <main class="layout">
-    <section class="panel">
-      <h2>1. 需求触发</h2>
-      <label>业务目标</label>
-      <textarea id="goal" rows="3" placeholder="例如：提升产品面谈效率，并减少PRD编写耗时"></textarea>
-
-      <label>当前痛点</label>
-      <textarea id="pain" rows="3" placeholder="例如：需求信息碎片化，方案评审反复"></textarea>
-
-      <label>硬约束（预算/API/人力）</label>
-      <textarea id="constraint" rows="2" placeholder="例如：2名前端+1名后端，8周内上线MVP"></textarea>
-    </section>
-
-    <section class="panel">
-      <h2>2. 动态澄清（产品面谈）</h2>
-      <div id="interviewQuestions" class="question-box"></div>
-      <button id="askBtn" class="btn">生成追问</button>
-      <div id="interviewAnswers"></div>
-    </section>
-
-    <section class="panel full">
-      <h2>3-10. 自动产出</h2>
-      <div class="tabs">
-        <button class="tab active" data-tab="summary">结构化方案</button>
-        <button class="tab" data-tab="plan">执行计划</button>
-        <button class="tab" data-tab="preview">HTML交付预览</button>
-        <button class="tab" data-tab="exports">JSON/Markdown</button>
-      </div>
-
-      <div id="summary" class="tab-panel active"></div>
-      <div id="plan" class="tab-panel"></div>
-      <div id="preview" class="tab-panel">
-        <iframe id="reportFrame" title="业务汇报页预览"></iframe>
-      </div>
-      <div id="exports" class="tab-panel">
-        <label>JSON</label>
-        <textarea id="jsonOut" rows="10" readonly></textarea>
-        <label>Markdown</label>
-        <textarea id="mdOut" rows="10" readonly></textarea>
-      </div>
-    </section>
-  </main>
-
-  <script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 协作需求平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
