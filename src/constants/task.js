@@ -26,7 +26,14 @@ export const INITIAL_TASK = {
   prototype: "",
   tech: "",
   report: "",
-  inputItems: []
+  inputItems: [],
+  interactions: [],
+  approvals: {
+    optimized: "pending",
+    prd: "pending",
+    tech: "pending",
+    report: "pending"
+  }
 };
 
 export const STORAGE_KEY = "ai-collab-demo-v1";

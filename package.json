@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "api": "node api-server.mjs",
+    "test:ai:proxy": "node scripts/test-ai.mjs proxy optimized",
+    "test:ai:direct": "node scripts/test-ai.mjs direct",
     "build": "vite build",
     "preview": "vite preview"
   },

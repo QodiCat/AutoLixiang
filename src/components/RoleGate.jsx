@@ -26,13 +26,14 @@ function RoleGate({ onRegister, onLogin }) {
   }
 
   return (
-    <div className="app">
-      <div className="card stack">
-        <div>
+    <div className="auth-page">
+      <div className="card auth-card">
+        <div className="auth-head">
           <h1>AI 协作需求平台</h1>
-          <p className="sub">请先登录或注册，按身份进入对应工作台</p>
+          <p className="sub">登录或注册后，按身份进入对应工作台</p>
         </div>
-        <div className="row">
+
+        <div className="auth-switch">
           <button className={mode === "login" ? "primary" : ""} onClick={() => setMode("login")}>
             登录
           </button>
@@ -40,6 +41,7 @@ function RoleGate({ onRegister, onLogin }) {
             注册
           </button>
         </div>
+
         <div className="auth-form">
           <input placeholder="账号" value={username} onChange={(e) => setUsername(e.target.value)} />
           <input
@@ -57,10 +59,10 @@ function RoleGate({ onRegister, onLogin }) {
               ))}
             </select>
           )}
-          <button className="primary" onClick={submit}>
+          <button className="primary auth-submit" onClick={submit}>
             {mode === "register" ? "注册并登录" : "登录"}
           </button>
-          {notice && <p className="small">{notice}</p>}
+          {notice && <p className="small auth-notice">{notice}</p>}
         </div>
       </div>
     </div>

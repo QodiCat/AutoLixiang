@@ -1,4 +1,23 @@
 import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+
+function loadEnvFile() {
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (!fs.existsSync(envPath)) return;
+  const raw = fs.readFileSync(envPath, "utf8");
+  for (const line of raw.split(/\r?\n/)) {
+    const s = line.trim();
+    if (!s || s.startsWith("#")) continue;
+    const idx = s.indexOf("=");
+    if (idx < 0) continue;
+    const key = s.slice(0, idx).trim();
+    const value = s.slice(idx + 1).trim().replace(/^['"]|['"]$/g, "");
+    if (!process.env[key]) process.env[key] = value;
+  }
+}
+
+loadEnvFile();
 
 const PORT = Number(process.env.AI_API_PORT || 8787);
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
