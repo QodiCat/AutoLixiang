@@ -9,7 +9,8 @@
   onStartDemand,
   onAddInput,
   onAskRound,
-  onGenerateOptimized
+  onGenerateOptimized,
+  busy
 }) {
   return (
     <div className="card stack">
@@ -33,7 +34,9 @@
           提交输入材料
         </button>
         <button onClick={onAskRound}>模拟 Agent 追问</button>
-        <button onClick={onGenerateOptimized}>生成优化需求</button>
+        <button onClick={onGenerateOptimized} disabled={busy}>
+          {busy ? "生成中..." : "生成优化需求"}
+        </button>
       </div>
       <div className="divider"></div>
       <p className="small">输入材料 {task.inputItems.length} 条</p>

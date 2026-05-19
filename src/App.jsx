@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import BizPanel from "./components/BizPanel";
 import DashboardHeader from "./components/DashboardHeader";
@@ -8,6 +8,7 @@ import RoleGate from "./components/RoleGate";
 import TechPanel from "./components/TechPanel";
 import { AUTH_SESSION_KEY, AUTH_USERS_KEY, INITIAL_TASK, STORAGE_KEY } from "./constants/task";
 import { nextStatus } from "./utils/task";
+import { generateWithAI } from "./utils/ai";
 
 function App() {
   const [session, setSession] = useState(() => {
@@ -30,6 +31,7 @@ function App() {
   const [contentInput, setContentInput] = useState("");
   const [inputType, setInputType] = useState("text");
   const [notice, setNotice] = useState("");
+  const [busyKind, setBusyKind] = useState("");
 
   const kpis = useMemo(() => {
     const rounds = task.rounds.length;
@@ -56,7 +58,7 @@ function App() {
 
   function flash(message) {
     setNotice(message);
-    window.setTimeout(() => setNotice(""), 1500);
+    window.setTimeout(() => setNotice(""), 2000);
   }
 
   function addInput() {
@@ -96,41 +98,46 @@ function App() {
     flash("已新增1轮追问");
   }
 
-  function generateOptimized() {
-    setTask((prev) => ({
-      ...prev,
-      status: nextStatus(prev.status, "optimized"),
-      optimized: `目标：${prev.title}\n背景：来自 ${prev.inputItems.length} 条输入材料\n约束：预算控制、两周内试点\n新增价值点：在注册后第2天引入行为激励，强化回访`
-    }));
-    flash("优化需求已生成");
+  async function runAIGeneration(kind) {
+    setBusyKind(kind);
+    try {
+      const text = await generateWithAI({ task, kind });
+      setTask((prev) => {
+        if (kind === "optimized") {
+          return { ...prev, status: nextStatus(prev.status, "optimized"), optimized: text };
+        }
+        if (kind === "prd") {
+          const [prdPart, prototypePart] = splitPrdAndPrototype(text);
+          return {
+            ...prev,
+            status: nextStatus(prev.status, "prd_ready"),
+            prd: prdPart || text,
+            prototype: prototypePart
+          };
+        }
+        if (kind === "tech") {
+          return { ...prev, status: nextStatus(prev.status, "tech_ready"), tech: text };
+        }
+        if (kind === "report") {
+          return { ...prev, status: nextStatus(prev.status, "report_ready"), report: text };
+        }
+        return prev;
+      });
+      flash("AI 生成完成");
+    } catch (error) {
+      flash(`AI 调用失败：${error.message}`);
+    } finally {
+      setBusyKind("");
+    }
   }
 
-  function generatePrd() {
-    setTask((prev) => ({
-      ...prev,
-      status: nextStatus(prev.status, "prd_ready"),
-      prd: "PRD 草案：用户旅程优化、消息触达策略、实验分组、验收指标（7日留存+3%）。",
-      prototype: "原型草案：首页引导卡片、任务进度模块、激励弹层与消息中心。"
-    }));
-    flash("PRD/原型草案已生成");
-  }
-
-  function generateTech() {
-    setTask((prev) => ({
-      ...prev,
-      status: nextStatus(prev.status, "tech_ready"),
-      tech: "技术方案草案：前端埋点事件模型、实验开关策略、风控兜底、灰度发布计划。"
-    }));
-    flash("技术方案已生成");
-  }
-
-  function generateReport() {
-    setTask((prev) => ({
-      ...prev,
-      status: nextStatus(prev.status, "report_ready"),
-      report: "汇报摘要：目标明确、方案可落地、风险可控，建议进入开发排期。"
-    }));
-    flash("汇报摘要已生成");
+  function splitPrdAndPrototype(text) {
+    const marker = "原型草案：";
+    const idx = text.indexOf(marker);
+    if (idx < 0) {
+      return [text, ""];
+    }
+    return [text.slice(0, idx).trim(), text.slice(idx).trim()];
   }
 
   function resetTask() {
@@ -231,14 +238,24 @@ function App() {
           onStartDemand={startDemand}
           onAddInput={addInput}
           onAskRound={askRound}
-          onGenerateOptimized={generateOptimized}
+          onGenerateOptimized={() => runAIGeneration("optimized")}
+          busy={busyKind === "optimized"}
         />
       )}
 
-      {session.role === "pm" && <PmPanel task={task} onGeneratePrd={generatePrd} />}
-      {session.role === "tech" && <TechPanel task={task} onGenerateTech={generateTech} />}
+      {session.role === "pm" && (
+        <PmPanel task={task} onGeneratePrd={() => runAIGeneration("prd")} busy={busyKind === "prd"} />
+      )}
+      {session.role === "tech" && (
+        <TechPanel task={task} onGenerateTech={() => runAIGeneration("tech")} busy={busyKind === "tech"} />
+      )}
       {session.role === "admin" && (
-        <AdminPanel task={task} onGenerateReport={generateReport} onPrintReport={printReport} />
+        <AdminPanel
+          task={task}
+          onGenerateReport={() => runAIGeneration("report")}
+          onPrintReport={printReport}
+          busy={busyKind === "report"}
+        />
       )}
     </div>
   );

@@ -1,12 +1,12 @@
-﻿import { STATUS_TEXT } from "../constants/task";
+import { STATUS_TEXT } from "../constants/task";
 
-function AdminPanel({ task, onGenerateReport, onPrintReport }) {
+function AdminPanel({ task, onGenerateReport, onPrintReport, busy }) {
   return (
     <div className="card stack">
       <h3>管理汇报</h3>
       <p className="small">整合需求、产品、技术输出，生成业务汇报页</p>
-      <button className="primary" onClick={onGenerateReport}>
-        生成 HTML 汇报摘要
+      <button className="primary" onClick={onGenerateReport} disabled={busy}>
+        {busy ? "生成中..." : "生成 HTML 汇报摘要"}
       </button>
       {task.report && <p>{task.report}</p>}
       <div className="report-sheet">
