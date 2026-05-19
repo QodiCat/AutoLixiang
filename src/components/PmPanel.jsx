@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function PmPanel({ task, onGeneratePrd, onRejectToBiz, busy }) {
+function PmPanel({ task, onGeneratePrd, onRejectToBiz, busy, error }) {
   const [reason, setReason] = useState("");
   const canGeneratePrd = task.inputItems.length > 0;
 
@@ -21,6 +21,7 @@ function PmPanel({ task, onGeneratePrd, onRejectToBiz, busy }) {
       <button className="primary" onClick={onGeneratePrd} disabled={busy || !canGeneratePrd}>
         {busy ? "生成中..." : "根据需求方内容生成 PRD"}
       </button>
+      {error && <p className="small">生成失败：{error}</p>}
       {!canGeneratePrd && <p className="small">请先让需求方至少提交 1 条输入材料</p>}
 
       <textarea

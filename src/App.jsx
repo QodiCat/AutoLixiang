@@ -19,10 +19,7 @@ function normalizeTask(raw) {
     rounds: Array.isArray(base.rounds) ? base.rounds : [],
     inputItems: Array.isArray(base.inputItems) ? base.inputItems : [],
     interactions: Array.isArray(base.interactions) ? base.interactions : [],
-    approvals: {
-      ...INITIAL_TASK.approvals,
-      ...(base.approvals || {})
-    }
+    approvals: { ...INITIAL_TASK.approvals, ...(base.approvals || {}) }
   };
 }
 
@@ -43,11 +40,9 @@ function App() {
       return normalizeTask(INITIAL_TASK);
     }
   });
-  const [titleInput, setTitleInput] = useState("");
-  const [contentInput, setContentInput] = useState("");
-  const [inputType, setInputType] = useState("text");
   const [notice, setNotice] = useState("");
   const [busyKind, setBusyKind] = useState("");
+  const [lastError, setLastError] = useState("");
 
   const kpis = useMemo(() => {
     const rounds = task.rounds.length;
@@ -84,28 +79,38 @@ function App() {
     };
   }
 
-  function addInput() {
-    if (!contentInput.trim()) return;
+  function addInput(formPayload) {
+    if (!formPayload || !formPayload.demandTitle?.trim() || !formPayload.demandDetail?.trim()) return;
+    const summary = [
+      `需求标题：${formPayload.demandTitle}`,
+      `需求详情：${formPayload.demandDetail}`,
+      `提出人：${formPayload.proposer || "-"}`,
+      `提出日期：${formPayload.proposeDate || "-"}`,
+      `期望上线：${formPayload.expectedLaunchDate || "-"}`,
+      `需求模块：${formPayload.demandModule || "-"}`,
+      `需求分类：${formPayload.demandCategory || "-"}`,
+      `合理性评估：${formPayload.rationalityAssessment || "-"}`,
+      `问题类型：${formPayload.problemType || "-"}`,
+      `影响范围：${formPayload.impactScope || "-"}`,
+      `预计收益：${formPayload.expectedBenefit || "-"}`,
+      `需求Owner：${formPayload.demandOwner || "-"}`,
+      `产品负责人：${formPayload.productOwner || "-"}`,
+      `预估人天：${formPayload.estimatedManDays || "-"}`,
+      `需求年度：${formPayload.demandYear || "-"}`,
+      `业务优先级：${formPayload.businessPriority || "-"}`,
+      `需求进展：${formPayload.demandProgress || "-"}`
+    ].join("\n");
+
     setTask((prev) => {
       const updated = {
         ...prev,
-        inputItems: [
-          ...prev.inputItems,
-          { id: crypto.randomUUID(), type: inputType, content: contentInput.trim() }
-        ],
+        title: formPayload.demandTitle.trim(),
+        inputItems: [...prev.inputItems, { id: crypto.randomUUID(), type: "demand_form", content: summary }],
         status: nextStatus(prev.status, "clarifying")
       };
-      return addInteraction(updated, "biz", "提交材料", `[${inputType}] ${contentInput.trim()}`);
+      return addInteraction(updated, "biz", "提交需求表单", formPayload.demandTitle.trim());
     });
-    setContentInput("");
-    flash("已保存输入材料");
-  }
-
-  function startDemand() {
-    if (!titleInput.trim()) return;
-    setTask((prev) => addInteraction({ ...prev, title: titleInput.trim() }, "biz", "更新标题", titleInput.trim()));
-    setTitleInput("");
-    flash("任务标题已更新");
+    flash("需求表单已提交");
   }
 
   function askRound() {
@@ -133,6 +138,7 @@ function App() {
     if (kind === "report" && !task.tech) return flash("请先生成技术方案");
 
     setBusyKind(kind);
+    setLastError("");
     try {
       const text = await generateWithAI({ task, kind });
       setTask((prev) => {
@@ -178,7 +184,9 @@ function App() {
       });
       flash("AI 生成完成");
     } catch (error) {
-      flash(`AI 调用失败：${error.message}`);
+      const msg = error?.message || "未知错误";
+      setLastError(msg);
+      flash(`AI 调用失败：${msg}`);
     } finally {
       setBusyKind("");
     }
@@ -209,24 +217,14 @@ function App() {
 
   function approveStage(stage) {
     setTask((prev) =>
-      addInteraction(
-        { ...prev, approvals: { ...prev.approvals, [stage]: "approved" } },
-        "admin",
-        "审批通过",
-        `阶段：${stage}`
-      )
+      addInteraction({ ...prev, approvals: { ...prev.approvals, [stage]: "approved" } }, "admin", "审批通过", `阶段：${stage}`)
     );
     flash(`${stage} 已审批通过`);
   }
 
   function rejectStage(stage) {
     setTask((prev) =>
-      addInteraction(
-        { ...prev, approvals: { ...prev.approvals, [stage]: "rejected" } },
-        "admin",
-        "审批打回",
-        `阶段：${stage}`
-      )
+      addInteraction({ ...prev, approvals: { ...prev.approvals, [stage]: "rejected" } }, "admin", "审批打回", `阶段：${stage}`)
     );
     flash(`${stage} 已打回`);
   }
@@ -247,8 +245,7 @@ function App() {
           { id: crypto.randomUUID(), type: "text", content: "新用户注册后缺少引导，次日回访动力不足。" }
         ],
         rounds: [{ q: "优先改善哪个用户细分？", a: "优先新注册且近 30 天首登用户。" }],
-        optimized:
-          "目标：提升新用户注册后7日留存\n背景：新用户次日流失明显\n约束：两周内试点上线\n新增价值点：行为激励+分层触达",
+        optimized: "目标：提升新用户注册后7日留存\n背景：新用户次日流失明显\n约束：两周内试点上线\n新增价值点：行为激励+分层触达",
         interactions: [
           {
             id: crypto.randomUUID(),
@@ -305,59 +302,13 @@ function App() {
 
   return (
     <div className="app stack">
-      <DashboardHeader
-        role={session.role}
-        username={session.username}
-        task={task}
-        notice={notice}
-        onSeedDemo={seedDemo}
-        onResetTask={resetTask}
-        onLogout={logout}
-      />
+      <DashboardHeader role={session.role} username={session.username} task={task} notice={notice} onSeedDemo={seedDemo} onResetTask={resetTask} onLogout={logout} />
       <KpiGrid kpis={kpis} />
 
-      {session.role === "biz" && (
-        <BizPanel
-          task={task}
-          titleInput={titleInput}
-          contentInput={contentInput}
-          inputType={inputType}
-          setTitleInput={setTitleInput}
-          setContentInput={setContentInput}
-          setInputType={setInputType}
-          onStartDemand={startDemand}
-          onAddInput={addInput}
-          onAskRound={askRound}
-          onGenerateOptimized={() => runAIGeneration("optimized")}
-          busy={busyKind === "optimized"}
-        />
-      )}
-      {session.role === "pm" && (
-        <PmPanel
-          task={task}
-          onGeneratePrd={() => runAIGeneration("prd")}
-          onRejectToBiz={rejectToBiz}
-          busy={busyKind === "prd"}
-        />
-      )}
-      {session.role === "tech" && (
-        <TechPanel
-          task={task}
-          onGenerateTech={() => runAIGeneration("tech")}
-          onRejectToPm={rejectToPm}
-          busy={busyKind === "tech"}
-        />
-      )}
-      {session.role === "admin" && (
-        <AdminPanel
-          task={task}
-          onGenerateReport={() => runAIGeneration("report")}
-          onPrintReport={printReport}
-          onApprove={approveStage}
-          onReject={rejectStage}
-          busy={busyKind === "report"}
-        />
-      )}
+      {session.role === "biz" && <BizPanel task={task} onAddInput={addInput} onAskRound={askRound} onGenerateOptimized={() => runAIGeneration("optimized")} busy={busyKind === "optimized"} />}
+      {session.role === "pm" && <PmPanel task={task} onGeneratePrd={() => runAIGeneration("prd")} onRejectToBiz={rejectToBiz} busy={busyKind === "prd"} error={lastError} />}
+      {session.role === "tech" && <TechPanel task={task} onGenerateTech={() => runAIGeneration("tech")} onRejectToPm={rejectToPm} busy={busyKind === "tech"} />}
+      {session.role === "admin" && <AdminPanel task={task} onGenerateReport={() => runAIGeneration("report")} onPrintReport={printReport} onApprove={approveStage} onReject={rejectStage} busy={busyKind === "report"} />}
 
       <StageDeliverables task={task} />
       <InteractionFeed items={task.interactions || []} />
