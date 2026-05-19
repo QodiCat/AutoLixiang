@@ -6,11 +6,18 @@ import KpiGrid from "./components/KpiGrid";
 import PmPanel from "./components/PmPanel";
 import RoleGate from "./components/RoleGate";
 import TechPanel from "./components/TechPanel";
-import { INITIAL_TASK, STORAGE_KEY } from "./constants/task";
+import { AUTH_SESSION_KEY, AUTH_USERS_KEY, INITIAL_TASK, STORAGE_KEY } from "./constants/task";
 import { nextStatus } from "./utils/task";
 
 function App() {
-  const [role, setRole] = useState("");
+  const [session, setSession] = useState(() => {
+    try {
+      const raw = localStorage.getItem(AUTH_SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
   const [task, setTask] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -38,6 +45,14 @@ function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(task));
   }, [task]);
+
+  useEffect(() => {
+    if (session) {
+      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+      return;
+    }
+    localStorage.removeItem(AUTH_SESSION_KEY);
+  }, [session]);
 
   function flash(message) {
     setNotice(message);
@@ -147,24 +162,64 @@ function App() {
     window.print();
   }
 
-  if (!role) {
-    return <RoleGate onSelect={setRole} />;
+  function getUsers() {
+    try {
+      const raw = localStorage.getItem(AUTH_USERS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveUsers(users) {
+    localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+  }
+
+  function handleRegister({ username, password, role }) {
+    const users = getUsers();
+    if (users.some((item) => item.username === username)) {
+      return { ok: false, message: "账号已存在，请直接登录" };
+    }
+    const created = { username, password, role };
+    saveUsers([...users, created]);
+    setSession({ username, role });
+    return { ok: true, message: `注册成功，已登录为${username}` };
+  }
+
+  function handleLogin({ username, password }) {
+    const users = getUsers();
+    const matched = users.find((item) => item.username === username && item.password === password);
+    if (!matched) {
+      return { ok: false, message: "账号或密码错误" };
+    }
+    setSession({ username: matched.username, role: matched.role });
+    return { ok: true, message: `登录成功，身份：${matched.role}` };
+  }
+
+  function logout() {
+    setSession(null);
+    flash("已退出登录");
+  }
+
+  if (!session) {
+    return <RoleGate onRegister={handleRegister} onLogin={handleLogin} />;
   }
 
   return (
     <div className="app stack">
       <DashboardHeader
-        role={role}
+        role={session.role}
+        username={session.username}
         task={task}
         notice={notice}
         onSeedDemo={seedDemo}
         onResetTask={resetTask}
-        onSwitchRole={() => setRole("")}
+        onLogout={logout}
       />
 
       <KpiGrid kpis={kpis} />
 
-      {role === "biz" && (
+      {session.role === "biz" && (
         <BizPanel
           task={task}
           titleInput={titleInput}
@@ -180,9 +235,9 @@ function App() {
         />
       )}
 
-      {role === "pm" && <PmPanel task={task} onGeneratePrd={generatePrd} />}
-      {role === "tech" && <TechPanel task={task} onGenerateTech={generateTech} />}
-      {role === "admin" && (
+      {session.role === "pm" && <PmPanel task={task} onGeneratePrd={generatePrd} />}
+      {session.role === "tech" && <TechPanel task={task} onGenerateTech={generateTech} />}
+      {session.role === "admin" && (
         <AdminPanel task={task} onGenerateReport={generateReport} onPrintReport={printReport} />
       )}
     </div>

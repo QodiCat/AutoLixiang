@@ -1,12 +1,12 @@
 ﻿import { ROLE, STATUS_TEXT } from "../constants/task";
 
-function DashboardHeader({ role, task, notice, onSeedDemo, onResetTask, onSwitchRole }) {
+function DashboardHeader({ role, username, task, notice, onSeedDemo, onResetTask, onLogout }) {
   return (
     <div className="card header">
       <div>
         <h2>{ROLE[role]}工作台</h2>
         <p className="sub">
-          任务：{task.id} · {task.title}
+          账号：{username} · 任务：{task.id} · {task.title}
         </p>
       </div>
       <div className="row">
@@ -21,8 +21,8 @@ function DashboardHeader({ role, task, notice, onSeedDemo, onResetTask, onSwitch
         <button className="ghost" onClick={onResetTask}>
           重置数据
         </button>
-        <button className="ghost" onClick={onSwitchRole}>
-          切换角色
+        <button className="ghost" onClick={onLogout}>
+          退出登录
         </button>
       </div>
     </div>

@@ -30,3 +30,5 @@ export const INITIAL_TASK = {
 };
 
 export const STORAGE_KEY = "ai-collab-demo-v1";
+export const AUTH_USERS_KEY = "ai-collab-users-v1";
+export const AUTH_SESSION_KEY = "ai-collab-session-v1";
